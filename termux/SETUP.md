@@ -26,8 +26,11 @@ curl -sfLO https://raw.githubusercontent.com/StXaviersOfficial/xd-assist/main/te
 ```
 
 Install the **XD Assist** app too (xd-delivery repo, `xdassist-1.0.1.apk`):
-its Bridge URL field pre-fills the eternal worker URL — you only paste the
-key once. Then enable its accessibility service.
+its Bridge URL field pre-fills the permanent device bridge
+`https://xd-bridge.quackeditzofficial.workers.dev` — you only paste the
+key once. Then enable its accessibility service. (The school worker
+`stxaviers-auth` is retired for device-bridge use; the bridge/assist
+target is `xd-bridge` now.)
 
 ## Starting the bridge (ONE command — the self-healing supervisor)
 

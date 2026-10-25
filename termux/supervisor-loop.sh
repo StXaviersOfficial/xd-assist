@@ -5,7 +5,7 @@
 set -u
 cd ~/xd
 
-WORKER="https://stxaviers-auth.quackeditzofficial.workers.dev"
+WORKER="https://xd-bridge.quackeditzofficial.workers.dev"
 KEY="$(cat .key 2>/dev/null | tr -d '[:space:]')"
 if [ -z "$KEY" ]; then
   echo "[supervisor] no .key — exiting"

@@ -12,7 +12,7 @@ never touch (or mistake) rig code, and vice versa.
 |---|---|---|---|
 | **XD Assist app** | `app/` | The phone (Android) | Accessibility service that polls the worker's `/rig/next-cmd` and executes screen commands (tap / swipe / type / dump / open / back / home). Key-authenticated with the XD key. |
 | **Termux bridge** | `termux/` | The phone (Termux) | `server.py` (localhost:25570) exposing `/exec`, `/fs/*`, `/rig/*` behind `X-Backend-Key`, plus a cloudflared tunnel with a **self-healing supervisor** that re-registers every tunnel URL with the worker registry — tunnel URLs never get pasted anywhere. |
-| **Worker proxy** | *not in this repo* | Cloudflare | `StXaviersOfficial/xavier-drive` — the eternal bridge URL; forwards `/rig/*` to whatever tunnel URL is currently registered. |
+| **Worker proxy** | *not in this repo* | Cloudflare | `xd-bridge` permanent device bridge at `https://xd-bridge.quackeditzofficial.workers.dev` — key-gated proxy that forwards `/exec`, `/fs/*`, `/rig/*` to whatever tunnel URL is currently registered (KV tunnel registry). The school worker (`stxaviers-auth`) is retired for device-bridge use. |
 
 The two phone-side pieces talk to the same worker and share the same XD key,
 so one command revives everything: `cd ~/xd && bash start-bridge.sh`.

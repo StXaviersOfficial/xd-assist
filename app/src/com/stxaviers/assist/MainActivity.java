@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
         // changes no matter how often the phone's tunnel restarts, so a
         // fresh install only needs the secure key pasted.
         if (savedUrl == null || savedUrl.trim().isEmpty()) {
-            savedUrl = "https://stxaviers-auth.quackeditzofficial.workers.dev";
+            savedUrl = "https://xd-bridge.quackeditzofficial.workers.dev";
         }
         urlField = field(savedUrl, false);
         urlField.setHint("https://xxxx.trycloudflare.com");
