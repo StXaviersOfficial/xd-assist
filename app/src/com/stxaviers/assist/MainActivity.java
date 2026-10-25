@@ -84,6 +84,11 @@ public class MainActivity extends Activity {
         // fresh install only needs the secure key pasted.
         if (savedUrl == null || savedUrl.trim().isEmpty()) {
             savedUrl = "https://xd-bridge.quackeditzofficial.workers.dev";
+            // v1.0.2: persist the default so ScreenControlService (which
+            // reads from prefs) sees the same value the UI shows — without
+            // this, the service would re-read an empty prefs entry and
+            // keep its previously-cached URL forever (sticky bug).
+            prefs().edit().putString(K_URL, savedUrl).apply();
         }
         urlField = field(savedUrl, false);
         urlField.setHint("https://xxxx.trycloudflare.com");

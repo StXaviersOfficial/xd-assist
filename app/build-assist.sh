@@ -1,5 +1,5 @@
 #!/bin/bash
-# build-assist.sh — build the XD Assist APK (com.stxaviers.assist 1.0.1 / code 2).
+# build-assist.sh — build the XD Assist APK (com.stxaviers.assist 1.0.2 / code 3).
 # Flat pipeline, NO Gradle, NO dependencies (framework + org.json only):
 #   aapt2 compile+link → javac → d8 → zip → zipalign → apksigner
 set -e
@@ -7,9 +7,9 @@ set -e
 # S26: portable paths — PROJ is always the folder this script lives in,
 # SDK/JDK/keystore can be overridden via env (works on any machine).
 SDK="${ANDROID_SDK:-/tmp/my-project/android-sdk}"
-BT=$SDK/build-tools/34.0.0
+BT=$SDK/build-tools/35.0.0
 PLATFORM=$SDK/platforms/android-34/android.jar
-JDK="${JAVA17_HOME:-/tmp/my-project/jdk17}"
+JDK="${JAVA_HOME:-/usr}"
 PROJ="$(cd "$(dirname "$0")" && pwd)"
 OUT=$PROJ/build
 KS="${XD_KEYSTORE:-/home/z/my-project/.secure/upload-keystore.jks}"
@@ -32,7 +32,7 @@ echo "[1/5] aapt2 compile + link…"
 
 echo "[2/5] javac…"
 find "$PROJ/src" -name "*.java" > "$OUT/sources.txt"
-"$JDK/bin/javac" -source 8 -target 8 -nowarn \
+"$JDK/bin/javac" --release 8 -nowarn \
     -classpath "$PLATFORM" \
     -d "$OUT/classes" \
     @"$OUT/sources.txt" "$OUT/gen/com/stxaviers/assist/R.java"
@@ -52,9 +52,9 @@ echo "[5/5] apksigner…"
 "$BT/apksigner" sign \
     --ks "$KS" --ks-pass "pass:$KSPASS" \
     --ks-key-alias stxaviers-upload \
-    --out "$OUT/xdassist-1.0.1.apk" \
+    --out "$OUT/xdassist-1.0.2.apk" \
     "$OUT/assist-aligned.apk"
-"$BT/apksigner" verify --print-certs "$OUT/xdassist-1.0.1.apk" | head -4
+"$BT/apksigner" verify --print-certs "$OUT/xdassist-1.0.2.apk" | head -4
 
-echo "DONE: $OUT/xdassist-1.0.1.apk ($(stat -c%s "$OUT/xdassist-1.0.1.apk") bytes)"
-sha256sum "$OUT/xdassist-1.0.1.apk"
+echo "DONE: $OUT/xdassist-1.0.2.apk ($(stat -c%s "$OUT/xdassist-1.0.2.apk") bytes)"
+sha256sum "$OUT/xdassist-1.0.2.apk"

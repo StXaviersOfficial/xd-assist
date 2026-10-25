@@ -86,13 +86,19 @@ public class ScreenControlService extends AccessibilityService {
         new Thread(() -> {
             while (polling && connected) {
                 try {
-                    if (backendUrl == null || backendUrl.isEmpty()) {
-                        SharedPreferences p = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
-                        backendUrl = p.getString(MainActivity.K_URL, "");
-                        backendKey = p.getString(MainActivity.K_KEY, "");
-                        if (backendUrl.isEmpty()) { Thread.sleep(3000); continue; }
-                    }
-                    JSONObject cmd = httpJson("GET", backendUrl + "/rig/next-cmd?timeout=10",
+                    // v1.0.2: ALWAYS re-read prefs every iteration so a
+                    // SAVE & TEST in MainActivity takes effect within one
+                    // poll cycle (~10s) — fixes the "sticky first URL" bug
+                    // where the service kept polling the original URL even
+                    // after the owner pasted a new one. Cost: trivial
+                    // (one SharedPreferences read per ~10s long-poll).
+                    SharedPreferences p = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
+                    String u = p.getString(MainActivity.K_URL, "");
+                    if (u.isEmpty()) u = "https://xd-bridge.quackeditzofficial.workers.dev";
+                    String k = p.getString(MainActivity.K_KEY, "");
+                    backendUrl = u;
+                    backendKey = k;
+                    JSONObject cmd = httpJson("GET", u + "/rig/next-cmd?timeout=10",
                             null);
                     if (cmd != null && !cmd.optBoolean("wait", false)) {
                         JSONObject result = execute(cmd);
