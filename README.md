@@ -1,57 +1,28 @@
-# XD Assist — device rig bridge for the owner's phone
+# xd-assist — XD Assist (keyless v1.1.0) + the v2 Termux bridge client
 
-Companion project to **XavierDrive** (`StXaviersOfficial/stxaviers-android`).
-It lives in its own repository on purpose: XD Assist is *not part of the
-school app* — it is the remote-control rig (screen + shell) for the owner's
-own device. Keeping it separate means code sweeps of the XavierDrive app
-never touch (or mistake) rig code, and vice versa.
+## What changed on 2026-11-09 (owner order: remove the entire key function)
 
-## What it is
+- **The key system is completely gone.** No X-Backend-Key, no X-Device-Key,
+  no DEVICE_KEY secret. Every endpoint on the permanent worker is open.
+- **The cloudflared trycloudflare tunnel is gone.** The Termux client
+  (`termux/xdclient.py`, pure Python stdlib) holds one WebSocket to the
+  permanent Cloudflare worker and executes shell + file commands.
+- **Screen control (RIG)** is served by the worker from a D1 queue
+  (strongly consistent — ~1-3s command pickup).
+- The app (v1.1.0) has no settings at all: install, enable accessibility,
+  done. It only ever talks to `https://xd-bridge.quackeditzofficial.workers.dev`.
 
-| Piece | Where | Runs on | What it does |
-|---|---|---|---|
-| **XD Assist app** | `app/` | The phone (Android) | Accessibility service that polls the worker's `/rig/next-cmd` and executes screen commands (tap / swipe / type / dump / open / back / home). Key-authenticated with the XD key. |
-| **Termux bridge** | `termux/` | The phone (Termux) | `server.py` (localhost:25570) exposing `/exec`, `/fs/*`, `/rig/*` behind `X-Backend-Key`, plus a cloudflared tunnel with a **self-healing supervisor** that re-registers every tunnel URL with the worker registry — tunnel URLs never get pasted anywhere. |
-| **Worker proxy** | *not in this repo* | Cloudflare | `xd-bridge` permanent device bridge at `https://xd-bridge.quackeditzofficial.workers.dev` — key-gated proxy that forwards `/exec`, `/fs/*`, `/rig/*` to whatever tunnel URL is currently registered (KV tunnel registry). The school worker (`stxaviers-auth`) is retired for device-bridge use. |
+## Owner quick start (Termux)
 
-The two phone-side pieces talk to the same worker and share the same XD key,
-so one command revives everything: `cd ~/xd && bash start-bridge.sh`.
+    curl -sfL https://raw.githubusercontent.com/StXaviersOfficial/xd-assist/main/termux/start.sh | bash
+
+That command: stops the old stack, downloads `xdclient.py`, starts it in the
+background with a wake lock, and drops `xdassist-1.1.0.apk` into `Download/`.
 
 ## Layout
 
-```
-app/                XD Assist APK source (com.stxaviers.assist)
-  AndroidManifest.xml
-  build-assist.sh     flat aapt2/javac/d8/apksigner pipeline (no Gradle)
-  res/  src/
-termux/             Phone-side bridge (Termux)
-  SETUP.md            the owner's command list (start here)
-  server.py           bridge server — /exec, /fs/*, /rig/*
-  start-bridge.sh     ONE command: kills old procs, self-updates from this
-                      repo (curl -f + syntax-checked), spawns supervisor
-  supervisor-loop.sh  nohup'd loop: keeps server + cloudflared alive,
-                      re-registers the tunnel URL every 5 min
-```
-
-## Building the app
-
-```bash
-cd app && bash build-assist.sh
-# env overrides if your SDK/JDK/keystore live elsewhere:
-# ANDROID_SDK=... JAVA17_HOME=... XD_KEYSTORE=... XD_KEYSTORE_PASS=... bash build-assist.sh
-```
-
-Output: `app/build/xdassist-<version>.apk` (release-signed with the
-`stxaviers-upload` key). Binaries are **never committed to this repo** —
-release APKs ship via the update channel (Cloudflare Pages + worker
-`APP_LATEST`), not via Git.
-
-## Security notes
-
-- Every hop (app → worker → tunnel → server.py) requires the XD key via
-  `X-Device-Key` / `X-Backend-Key`; the bridge **refuses to start** without it.
-- `server.py` clamps filesystem access to Termux home + shared storage,
-  bounds queued rig results, and returns clean 4xx errors.
-- `start-bridge.sh` verifies downloads before swapping them in
-  (`curl -f` + `ast.parse` / `bash -n` guards) — a broken upstream can no
-  longer brick the bridge with a 404 page.
+- `app/` — the XD Assist Android app (flat aapt2/javac/d8 build, no Gradle)
+- `termux/xdclient.py` — the v2 phone client (websocket, keyless)
+- `termux/start.sh` — the one-line launcher
+- `termux/server.py`, `termux/supervisor-loop.sh` — the OLD v1 stack
+  (HTTP server + cloudflared tunnel + key), kept for history only
