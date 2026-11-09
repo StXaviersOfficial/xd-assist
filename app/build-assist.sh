@@ -1,12 +1,13 @@
 #!/bin/bash
-# build-assist.sh — build the XD Assist APK (com.stxaviers.assist 1.0.2 / code 3).
+# build-assist.sh — build the XD Assist APK (com.stxaviers.assist 1.1.0 / code 4).
+# v1.1.0: KEYLESS edition — no key field, hardcoded permanent bridge.
 # Flat pipeline, NO Gradle, NO dependencies (framework + org.json only):
 #   aapt2 compile+link → javac → d8 → zip → zipalign → apksigner
 set -e
 
-# S26: portable paths — PROJ is always the folder this script lives in,
+# S27: portable paths — PROJ is always the folder this script lives in,
 # SDK/JDK/keystore can be overridden via env (works on any machine).
-SDK="${ANDROID_SDK:-/tmp/my-project/android-sdk}"
+SDK="${ANDROID_SDK:-/tmp/android-sdk}"
 BT=$SDK/build-tools/35.0.0
 PLATFORM=$SDK/platforms/android-34/android.jar
 JDK="${JAVA_HOME:-/usr}"
@@ -52,9 +53,9 @@ echo "[5/5] apksigner…"
 "$BT/apksigner" sign \
     --ks "$KS" --ks-pass "pass:$KSPASS" \
     --ks-key-alias stxaviers-upload \
-    --out "$OUT/xdassist-1.0.2.apk" \
+    --out "$OUT/xdassist-1.1.0.apk" \
     "$OUT/assist-aligned.apk"
-"$BT/apksigner" verify --print-certs "$OUT/xdassist-1.0.2.apk" | head -4
+"$BT/apksigner" verify --print-certs "$OUT/xdassist-1.1.0.apk" | head -4
 
-echo "DONE: $OUT/xdassist-1.0.2.apk ($(stat -c%s "$OUT/xdassist-1.0.2.apk") bytes)"
-sha256sum "$OUT/xdassist-1.0.2.apk"
+echo "DONE: $OUT/xdassist-1.1.0.apk ($(stat -c%s "$OUT/xdassist-1.1.0.apk") bytes)"
+sha256sum "$OUT/xdassist-1.1.0.apk"
