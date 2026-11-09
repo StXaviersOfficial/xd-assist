@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">XD Assist</string>
     <string name="acc_service_label">XD Assist screen control</string>
-    <string name="acc_service_desc">Lets the developers you allow (through your own Termux bridge and key) read the screen and tap, swipe and type on it, so they can test and fix the school app on this phone. Nothing works until you enable it here, and it only talks to the backend address you typed in the app.</string>
+    <string name="acc_service_desc">Lets the agent you allow (through your own permanent keyless bridge) read the screen and tap, swipe and type on it, so they can test and fix things on this phone remotely. Nothing works until you enable it here, and it only ever talks to the permanent bridge address built into the app.</string>
 </resources>
