@@ -2,7 +2,6 @@ package com.stxaviers.assist;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -19,11 +18,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * ScreenControlService — the XD Assist accessibility engine.
+ * ScreenControlService — the XD Assist accessibility engine (v1.1.0 keyless).
  *
- * While enabled in Android Settings it polls the owner's Termux bridge
- * (GET /rig/next-cmd) and performs each command on the screen, then
- * reports the result back (POST /rig/result). Commands:
+ * While enabled in Android Settings it polls the PERMANENT bridge worker
+ * (GET /rig/next-cmd — no key since v1.1.0) and performs each command on
+ * the screen, then reports the result back (POST /rig/result). Commands:
  *
  *   tap    x y                          — tap anywhere
  *   swipe  x1 y1 x2 y2 [durationMs]     — swipe gesture
@@ -33,24 +32,21 @@ import java.nio.charset.StandardCharsets;
  *                                           text + its tap coordinates)
  *   open   com.stxaviers.app             — launch an app by package
  *
- * The bridge URL + key come from MainActivity's saved settings, so
- * nothing works until the owner connects it.
+ * The bridge URL is hardcoded (MainActivity.WORKER) — the key system and
+ * the settings screen for it were removed in v1.1.0 (owner order 2026-11-09).
  */
 public class ScreenControlService extends AccessibilityService {
 
     public static volatile boolean connected = false;
+    public static volatile boolean lastPollOk = false;
 
     private final Handler h = new Handler(Looper.getMainLooper());
-    private String backendUrl, backendKey;
     private volatile boolean polling;
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
         connected = true;
-        SharedPreferences p = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
-        backendUrl = p.getString(MainActivity.K_URL, "");
-        backendKey = p.getString(MainActivity.K_KEY, "");
         startPolling();
     }
 
@@ -86,26 +82,19 @@ public class ScreenControlService extends AccessibilityService {
         new Thread(() -> {
             while (polling && connected) {
                 try {
-                    // v1.0.2: ALWAYS re-read prefs every iteration so a
-                    // SAVE & TEST in MainActivity takes effect within one
-                    // poll cycle (~10s) — fixes the "sticky first URL" bug
-                    // where the service kept polling the original URL even
-                    // after the owner pasted a new one. Cost: trivial
-                    // (one SharedPreferences read per ~10s long-poll).
-                    SharedPreferences p = getSharedPreferences(MainActivity.PREFS, MODE_PRIVATE);
-                    String u = p.getString(MainActivity.K_URL, "");
-                    if (u.isEmpty()) u = "https://xd-bridge.quackeditzofficial.workers.dev";
-                    String k = p.getString(MainActivity.K_KEY, "");
-                    backendUrl = u;
-                    backendKey = k;
-                    JSONObject cmd = httpJson("GET", u + "/rig/next-cmd?timeout=10",
-                            null);
+                    JSONObject cmd = httpJson("GET",
+                            MainActivity.WORKER + "/rig/next-cmd?timeout=10", null);
+                    lastPollOk = cmd != null;
                     if (cmd != null && !cmd.optBoolean("wait", false)) {
                         JSONObject result = execute(cmd);
                         if (result != null) {
                             result.put("id", cmd.optString("id", ""));
-                            httpJson("POST", backendUrl + "/rig/result", result);
+                            httpJson("POST", MainActivity.WORKER + "/rig/result", result);
                         }
+                    } else {
+                        // idle — small client-side gap keeps the worker's
+                        // D1 read rate comfortably low (v1.1.0)
+                        Thread.sleep(1500);
                     }
                 } catch (InterruptedException ie) {
                     return;
@@ -250,15 +239,14 @@ public class ScreenControlService extends AccessibilityService {
         }
     }
 
-    // ── tiny http (framework only, org.json included) ─────────────────
+    // ── tiny http (framework only, org.json included, NO key) ──────────
 
     private JSONObject httpJson(String method, String url, JSONObject body) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setRequestMethod(method);
         c.setConnectTimeout(12000);
         c.setReadTimeout(30000);
-        c.setRequestProperty("X-Backend-Key", backendKey == null ? "" : backendKey);
-        c.setRequestProperty("User-Agent", "XDAssist/1.0.0 (Android)");
+        c.setRequestProperty("User-Agent", "XDAssist/1.1.0 (Android)");
         if (body != null) {
             c.setDoOutput(true);
             c.setRequestProperty("Content-Type", "application/json");
